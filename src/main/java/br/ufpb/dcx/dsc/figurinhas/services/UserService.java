@@ -1,18 +1,15 @@
 package br.ufpb.dcx.dsc.figurinhas.services;
 
-import br.ufpb.dcx.dsc.figurinhas.models.Album;
-import br.ufpb.dcx.dsc.figurinhas.models.Figurinha;
 import br.ufpb.dcx.dsc.figurinhas.models.Photo;
 import br.ufpb.dcx.dsc.figurinhas.models.User;
 import br.ufpb.dcx.dsc.figurinhas.repository.AlbumRepository;
 import br.ufpb.dcx.dsc.figurinhas.repository.FigurinhaRepository;
 import br.ufpb.dcx.dsc.figurinhas.repository.PhotoRepository;
 import br.ufpb.dcx.dsc.figurinhas.repository.UserRepository;
+import br.ufpb.dcx.dsc.figurinhas.validation.ItemNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class UserService {
@@ -33,14 +30,11 @@ public class UserService {
         return userRepository.findAll();
     }
     public User getUser(Long userId) {
-
-        if(userId != null)
-            return userRepository.getReferenceById(userId);
-        return null;
+        return userRepository.findById(userId)
+                .orElseThrow(() -> new ItemNotFoundException("Usuário não encontrado"));
     }
 
     public User createUser(User user){
-
         Photo photo = new Photo("www.exemplo.com/foto.png");
         photoRepository.save(photo);
         user.setPhoto(photo);
@@ -48,40 +42,17 @@ public class UserService {
     }
 
     public User updateUser(Long userId, User u) {
-        Optional<User> userOpt = userRepository.findById(userId);
-        if(userOpt.isPresent()){
-            User user = userOpt.get();
-            user.setEmail(u.getEmail());
-            user.setNome(u.getNome());
-            return userRepository.save(user);
-        }
-        return null;
+        User userOpt = userRepository.findById(userId).
+                orElseThrow(() -> new ItemNotFoundException("User with " + userId + " not found"));
+        userOpt.setEmail(u.getEmail());
+        userOpt.setNome(u.getNome());
+        return userRepository.save(userOpt);
     }
 
     public void deleteUser(Long userId) {
-    /*    Optional<User> uOpt = userRepository.findById(userId);
-        User u = uOpt.get();
-        if(uOpt.isPresent()){
-            // Remove all boards shared with me
-            u.getBoardsShared().removeAll(u.getBoardsShared());
-
-            // Remove users who share my boards
-            Collection<Board> myBoards = u.getBoards();
-            myBoards.stream().forEach(board -> {
-                Collection<User> users = board.getUsers();
-                users.stream().forEach(user -> {
-                    user.getBoardsShared().remove(board);
-                    userRepository.save(user);
-                });
-                boardRepository.save(board);
-            });
-            userRepository.save(u);
-            userRepository.delete(u);
-
-
-        }
-
-            */
+        User user = userRepository.findById(userId).
+                orElseThrow(() -> new ItemNotFoundException("User with " + userId + " not found"));
+        userRepository.delete(user);
     }
 
 //    public Album share(Long albumId, Long userId, Long figId){

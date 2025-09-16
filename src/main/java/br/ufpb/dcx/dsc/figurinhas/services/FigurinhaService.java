@@ -2,6 +2,7 @@ package br.ufpb.dcx.dsc.figurinhas.services;
 
 import br.ufpb.dcx.dsc.figurinhas.models.Figurinha;
 import br.ufpb.dcx.dsc.figurinhas.repository.FigurinhaRepository;
+import br.ufpb.dcx.dsc.figurinhas.validation.ItemNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -16,7 +17,9 @@ public class FigurinhaService {
     }
 
     public Figurinha getFigurinha(Long id){
-        return figurinhaRepository.getReferenceById(id);
+        Figurinha figurinha = figurinhaRepository.findById(id)
+                .orElseThrow(() -> new ItemNotFoundException("Figurinha com id " + id + " não encontrada"));
+        return figurinha;
     }
 
     public List<Figurinha> listFigurinhas() {
@@ -32,13 +35,10 @@ public class FigurinhaService {
     }
 
     public Figurinha updateFigurinha(Long id, Figurinha f) {
-        Optional<Figurinha> figOpt = figurinhaRepository.findById(id);
-        if(figOpt.isPresent()){
-            Figurinha toUpdate = figOpt.get();
-            toUpdate.setSelecao(f.getSelecao());
-            toUpdate.setNome(f.getNome());
-            return toUpdate;
-        }
-        return null;
+        Figurinha figOpt = figurinhaRepository.findById(id)
+                .orElseThrow(() -> new ItemNotFoundException("Figurinha não encontrada"));
+        figOpt.setSelecao(f.getSelecao());
+        figOpt.setNome(f.getNome());
+        return figurinhaRepository.save(figOpt);
     }
 }

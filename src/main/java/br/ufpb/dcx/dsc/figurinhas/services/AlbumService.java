@@ -4,6 +4,8 @@ import br.ufpb.dcx.dsc.figurinhas.models.Album;
 import br.ufpb.dcx.dsc.figurinhas.models.User;
 import br.ufpb.dcx.dsc.figurinhas.repository.AlbumRepository;
 import br.ufpb.dcx.dsc.figurinhas.repository.UserRepository;
+import br.ufpb.dcx.dsc.figurinhas.validation.ItemNotFoundException;
+import br.ufpb.dcx.dsc.figurinhas.validation.UsuarioPossuiAlbum;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -20,7 +22,8 @@ public class AlbumService {
     }
 
     public Album getAlbum(Long id){
-        return albumRepository.getReferenceById(id);
+        return albumRepository.findById(id)
+                .orElseThrow(() -> new ItemNotFoundException("Álbum não encontrado"));
     }
 
     public List<Album> listAlbuns() {
@@ -28,12 +31,16 @@ public class AlbumService {
     }
 
     public Album saveAlbum(Album a, Long userId) {
-        Optional<User> userOpt = userRepository.findById(userId);
-        if(userOpt.isPresent()){
-            a.setUser(userOpt.get());
-            return albumRepository.save(a);
+        User userOpt = userRepository.findById(userId)
+                .orElseThrow(() -> new ItemNotFoundException("Usuário não encontrado"));
+        List<Album> albums = userOpt.getAlbuns();
+        for (Album album : albums) {
+            if (album.getNome().equals(a.getNome())) {
+                throw new UsuarioPossuiAlbum("Usuário já possui esse álbum");
+            }
         }
-        return null;
+        a.setUser(userOpt);
+        return albumRepository.save(a);
     }
 
     public void deleteAlbum(Long id) {
@@ -41,12 +48,9 @@ public class AlbumService {
     }
 
     public Album updateAlbum(Long id, Album f) {
-        Optional<Album> figOpt = albumRepository.findById(id);
-        if(figOpt.isPresent()){
-            Album toUpdate = figOpt.get();
-            toUpdate.setNome(f.getNome());
-            return toUpdate;
-        }
-        return null;
+        Album figOpt = albumRepository.findById(id)
+                .orElseThrow(() -> new ItemNotFoundException("Álbum não encontrado"));
+        figOpt.setNome(f.getNome());
+        return albumRepository.save(figOpt);
     }
 }
